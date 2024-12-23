@@ -9,8 +9,8 @@ namespace School.Classes
 {
     class Student : Person
     {
-        public string StudentID { get; set; }
-        //public Grade GradeLevel { get; set; }
+        public int StudentID { get; set; }
+       
         public List<Subject> subjectlist = new List<Subject>();
         public double GPA { get; set; }
 
