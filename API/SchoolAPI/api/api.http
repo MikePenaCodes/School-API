@@ -1,0 +1,124 @@
+@api_HostAddress = http://localhost:5152
+//Get a list of all Students.
+GET {{api_HostAddress}}/api/student
+Accept: application/json
+
+###
+//Get details for specific Students.
+GET {{api_HostAddress}}/api/student/1003
+Accept: application/json
+
+###
+//Post or Create a new student, subject does not need to be assigned.
+POST {{api_HostAddress}}/api/student
+Content-Type: application/json
+Accept-Language: en-US,en:q=0.5
+
+    {
+  "name": "Juan lopez",
+  "age": 23,
+  "address": "838 Mineral Wells Lane",
+  "gpa": 4,
+  "studentSubjectGrades": [
+  ]
+    }
+
+###
+//Get list of subjects that a student is enrolled in. 
+GET {{api_HostAddress}}/api/student/1003/subjects
+Accept: application/json
+
+###
+//Get list of subjects that a student is enrolled in. 
+GET {{api_HostAddress}}/api/student/1007/subjectsgrades
+Accept: application/json
+
+###
+//POST. Enrolls subject to current student. 
+POST {{api_HostAddress}}/api/student/1009/subjects
+Content-Type: application/json
+Accept-Language: en-US,en:q=0.5
+
+    {
+      "subjectID": 17
+    }
+
+###
+// Delete.Student drops classes.
+DELETE {{api_HostAddress}}/api/student/1001/subjects/16
+
+
+/////////////////////////////////////////////////////////////////////////
+/////////////////////////////////////////////////////////////////////////
+
+###
+//Get a list of all teachers.
+GET {{api_HostAddress}}/api/teacher
+Accept: application/json
+
+###
+//Get a list of all subjects.
+GET {{api_HostAddress}}/api/teacher/subjects
+Accept: application/json
+
+
+###
+//Get details of specific teacher.
+GET {{api_HostAddress}}/api/teacher/2001
+Accept: application/json
+
+###
+//Get list of subjects that a teacher is assigned to. 
+GET {{api_HostAddress}}/api/teacher/2003/subjects
+Accept: application/json
+
+###
+//Get list of students taking specific subject taught by professor.
+GET {{api_HostAddress}}/api/teacher/2003/subjects/21/students
+Accept: application/json
+
+###
+//PUT. Update grades for specific student.
+PUT {{api_HostAddress}}/api/teacher/2003/subjects/21/students/1003
+Content-Type: application/json
+Accept-Language: en-US,en:q=0.5
+
+{
+  "gradenumber": 88
+}
+
+###
+//Post or Create a new teacher, subject does not need to be assigned.
+POST {{api_HostAddress}}/api/teacher
+Content-Type: application/json
+Accept-Language: en-US,en:q=0.5
+
+   {
+  "name": "Prof. Mikey",
+  "age": 38,
+  "address": "101 Learning Blvd",
+  "yearsofExp": 18,
+  "teacherSubjects": [
+    {
+      "subjectID": 16
+    }
+  ]
+}
+
+###
+//POST. Create a subject as a teacher, and assign themselves to it. 
+POST {{api_HostAddress}}/api/teacher/subjects
+Content-Type: application/json
+Accept-Language: en-US,en:q=0.5
+
+{
+  "name": "French"
+}
+
+###
+//Delete. Removes teacher from subject.
+DELETE {{api_HostAddress}}/api/teacher/2001/subjects/16
+
+###
+//Delete. Deletes Subject.
+DElETE {{api_HostAddress}}/api/teacher/subjects/16
