@@ -24,119 +24,47 @@ namespace api.Controllers
             _context = context;
         }
 
-        [HttpGet]
+        //////////////////////////////////////////////////////////////////////////////////
+        //Get All Students
+
+        [HttpGet("get")]
         public async Task<IActionResult> GetAllAsync()
         {
-            var students = await _context.Student
+            var allStudents = await _context.Student
                 .Include(s => s.StudentSubjectGrades)
                 .ThenInclude(ssg => ssg.Subject)
                 .ToListAsync(); // Fetch the students with their related data
 
-            var studentDtos = students.Select(s => s.ToStudentDTO()).ToList(); // Convert the students to DTOs
+            var studentDtos = allStudents.Select(s => s.ToStudentDTO()).ToList(); // Convert the students to DTOs
 
             return Ok(studentDtos); // Return the DTOs
         }
 
+        //////////////////////////////////////////////////////////////////////////////////
+        //Get Student by Id
+
 
         //IActionResult = wrapper to return api type.
-        [HttpGet("{id}")]
-        public async Task<IActionResult> GetById([FromRoute] int id)
+        [HttpGet("get/{studentId}")]
+        public async Task<IActionResult> GetById([FromRoute] int studentId)
         {
-            var student = await _context.Student
+            var targetStudent = await _context.Student
                 .Include(s => s.StudentSubjectGrades)
                 .ThenInclude(ssg => ssg.Subject)
-                .FirstOrDefaultAsync(s => s.StudentID == id);
+                .FirstOrDefaultAsync(s => s.StudentID == studentId);
 
-            if (student == null)
+            if (targetStudent == null)
             {
                 return NotFound();
             }
 
-            return Ok(student.ToStudentDTO());
+            return Ok(targetStudent.ToStudentDTO());
         }
 
-        [HttpGet("{id}/subjects")]
-        public async Task<IActionResult> GetSubjectsById([FromRoute] int id)
-        {
-            var student = await _context.Student
-                .Include(s => s.StudentSubjectGrades)
-                .ThenInclude(ssg => ssg.Subject)
-                .FirstOrDefaultAsync(s => s.StudentID == id);
+        //////////////////////////////////////////////////////////////////////////////////
+        //Create a student
 
-            if (student == null)
-            {
-                return NotFound();
-            }
-
-            return Ok(student.ToStudentsSubjectOnlyDTO());
-        }
-
-
-        //Current
-        [HttpPost("{id}/subjects")]
-        public async Task<IActionResult> Create(int id, [FromBody] EnrollinSubjectDTO newsubjectDTO)
-        {
-            if (newsubjectDTO == null)
-            {
-                return BadRequest("SubjectID is required.");
-            }
-
-            var studentsubject = await _context.Student.Include(s => s.StudentSubjectGrades).ThenInclude(ssg => ssg.Subject)
-            .FirstOrDefaultAsync(s => s.StudentID == id);
-
-            var subject = _context.Subject.FirstOrDefault(s => s.SubjectID == newsubjectDTO.SubjectID);
-
-            if (studentsubject == null)
-            {
-                return NotFound();
-            };
-
-            var newsubject = studentsubject.ToSubjectFromCreateDTO(_context, newsubjectDTO, subject);
-
-
-            _context.StudentSubjectGrade.Add(newsubject);
-            _context.SaveChanges();
-
-            // Return the created student as a DTO
-            return CreatedAtAction(nameof(GetById), new { id = studentsubject.StudentID }, studentsubject.ToStudentnogradeDTO());
-        }
-
-        [HttpDelete("{studentid}/subjects/{subjectid}")]
-        public async Task<IActionResult> Delete([FromRoute] int subjectid, int studentid)
-        {
-            var studentsubject = _context.StudentSubjectGrade.FirstOrDefault(ssg => ssg.SubjectID == subjectid & ssg.StudentID == studentid);
-
-            if (studentsubject == null)
-            {
-                return NotFound();
-            }
-
-            _context.StudentSubjectGrade.Remove(studentsubject);
-
-            _context.SaveChanges();
-
-            return NoContent();
-        }
-
-        [HttpGet("{id}/subjectsgrades")]
-        public async Task<IActionResult> GetSubjectGradesById([FromRoute] int id)
-        {
-            var student = await _context.Student
-                .Include(s => s.StudentSubjectGrades)
-                .ThenInclude(ssg => ssg.Subject)
-                .FirstOrDefaultAsync(s => s.StudentID == id);
-
-            if (student == null)
-            {
-                return NotFound();
-            }
-
-            return Ok(student.ToStudentsSubjectGradesOnlyDTO());
-        }
-
-
-
-        [HttpPost]
+        [HttpPost("create")]
         public IActionResult Create([FromBody] CreateStudentRequestDTO studentDTO)
         {
             if (studentDTO == null)
@@ -147,14 +75,14 @@ namespace api.Controllers
             // Check if all subjects exist in the database and retrieve them
             foreach (var ssg in studentDTO.StudentSubjectGrades)
             {
-                var subject = _context.Subject.FirstOrDefault(s => s.SubjectID == ssg.SubjectID);
-                if (subject == null)
+                var targetSubject = _context.Subject.FirstOrDefault(s => s.SubjectID == ssg.SubjectID);
+                if (targetSubject == null)
                 {
                     return BadRequest($"Subject with ID {ssg.SubjectID} not found.");
                 }
 
                 // Assign the SubjectName (to be returned later in the DTO)
-                ssg.SubjectName = subject.Name;
+                ssg.SubjectName = targetSubject.Name;
             }
 
             // Map the StudentDTO to a Student entity (including StudentSubjectGrades)
@@ -165,8 +93,99 @@ namespace api.Controllers
             _context.SaveChanges();
 
             // Return the created student as a DTO
-            return CreatedAtAction(nameof(GetById), new { id = student.StudentID }, student.ToStudentDTO());
+            return CreatedAtAction(nameof(GetById), new { studentId = student.StudentID }, student.ToStudentDTO());
         }
+
+        //////////////////////////////////////////////////////////////////////////////////
+        //Get Subjects by StudentId
+
+        [HttpGet("{studentId}/subjects/get")]
+        public async Task<IActionResult> GetSubjectsById([FromRoute] int studentId)
+        {
+            var student = await _context.Student
+                .Include(s => s.StudentSubjectGrades)
+                .ThenInclude(ssg => ssg.Subject)
+                .FirstOrDefaultAsync(s => s.StudentID == studentId);
+
+            if (student == null)
+            {
+                return NotFound();
+            }
+
+            return Ok(student.ToStudentsSubjectOnlyDTO());
+        }
+
+        //////////////////////////////////////////////////////////////////////////////////
+        //Enroll student in a subject
+
+        [HttpPost("{studentId}/subjects/create")]
+        public async Task<IActionResult> Create(int studentId, [FromBody] EnrollinSubjectDTO subjectToEnrollDTO)
+        {
+            if (subjectToEnrollDTO == null)
+            {
+                return BadRequest("SubjectID is required.");
+            }
+
+            var studentSubject = await _context.Student.Include(s => s.StudentSubjectGrades).ThenInclude(ssg => ssg.Subject)
+            .FirstOrDefaultAsync(s => s.StudentID == studentId);
+
+            var subjectFromDatabase = _context.Subject.FirstOrDefault(s => s.SubjectID == subjectToEnrollDTO.SubjectID);
+
+            if (studentSubject == null)
+            {
+                return NotFound();
+            };
+
+            var subjectToEnroll = studentSubject.ToSubjectFromCreateDTO(_context, subjectToEnrollDTO, subjectFromDatabase);
+
+
+            _context.StudentSubjectGrade.Add(subjectToEnroll);
+            _context.SaveChanges();
+
+            // Return the created student as a DTO
+            return CreatedAtAction(nameof(GetById), new { studentId = studentSubject.StudentID }, studentSubject.ToStudentnogradeDTO());
+        }
+
+        //////////////////////////////////////////////////////////////////////////////////
+        //Drop class 
+
+        [HttpDelete("{studentId}/subjects/{subjectId}")]
+        public async Task<IActionResult> Delete([FromRoute] int subjectId, int studentId)
+        {
+            var studentSubject = _context.StudentSubjectGrade.FirstOrDefault(ssg => ssg.SubjectID == subjectId & ssg.StudentID == studentId);
+
+            if (studentSubject == null)
+            {
+                return NotFound();
+            }
+
+            _context.StudentSubjectGrade.Remove(studentSubject);
+
+            _context.SaveChanges();
+
+            return NoContent();
+        }
+
+        //////////////////////////////////////////////////////////////////////////////////
+        //Get Grades from Student
+
+        [HttpGet("{studentId}/subjectsgrades")]
+        public async Task<IActionResult> GetSubjectGradesById([FromRoute] int studentId)
+        {
+            var targetStudent = await _context.Student
+                .Include(s => s.StudentSubjectGrades)
+                .ThenInclude(ssg => ssg.Subject)
+                .FirstOrDefaultAsync(s => s.StudentID == studentId);
+
+            if (targetStudent == null)
+            {
+                return NotFound();
+            }
+
+            return Ok(targetStudent.ToStudentsSubjectGradesOnlyDTO());
+        }
+
+
 
     }
 

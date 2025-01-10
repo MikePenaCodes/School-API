@@ -56,7 +56,7 @@ namespace api.Mappers
         }).ToList();
 
         }
-        public static StudentSubjectIdGradeDTO UpdateStudentsGrade(this Teacher teacherModel, int subjectid, int studentid, int? newGrade)
+        public static StudentSubjectIDGradeDTO UpdateStudentsGrade(this Teacher teacherModel, int subjectid, int studentid, int? newGrade)
         {
             var studentGrade = teacherModel.TeacherSubjects
         .Where(ts => ts.SubjectID == subjectid)
@@ -70,7 +70,7 @@ namespace api.Mappers
 
             studentGrade.GradeNumber = newGrade;
 
-            return new StudentSubjectIdGradeDTO
+            return new StudentSubjectIDGradeDTO
             {
                 StudentID = studentGrade.StudentID,
                 StudentName = studentGrade.Student.Name,
