@@ -2,10 +2,14 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
+using System.Security.Claims;
 using System.Threading.Tasks;
 using api.DTOs;
+using api.Helpers;
+using api.Interfaces;
 using api.Mappers;
 using Data;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
@@ -17,172 +21,173 @@ namespace api.Controllers
     [ApiController]
     public class StudentController : Controller
     {
-        private readonly ApplicationDBContext _context;
+        private readonly IStudentService _studentService;
 
-        public StudentController(ApplicationDBContext context)
+        public StudentController(IStudentService studentService)
         {
-            _context = context;
+            _studentService = studentService;
         }
 
         //////////////////////////////////////////////////////////////////////////////////
         //Get All Students
 
         [HttpGet("get")]
-        public async Task<IActionResult> GetAllAsync()
+        [Authorize(Roles = "User")]
+        public async Task<IActionResult> GetAllAsync([FromQuery]QueryObject query)
         {
-            var allStudents = await _context.Student
-                .Include(s => s.StudentSubjectGrades)
-                .ThenInclude(ssg => ssg.Subject)
-                .ToListAsync(); // Fetch the students with their related data
-
-            var studentDtos = allStudents.Select(s => s.ToStudentDTO()).ToList(); // Convert the students to DTOs
-
-            return Ok(studentDtos); // Return the DTOs
+            try
+            {
+                var allStudent = await _studentService.GetAllStudentsAsync(query);
+                return Ok(allStudent); // Return the DTOs
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(ex.Message);;
+            }
         }
 
         //////////////////////////////////////////////////////////////////////////////////
         //Get Student by Id
 
-
-        //IActionResult = wrapper to return api type.
-        [HttpGet("get/{studentId}")]
-        public async Task<IActionResult> GetById([FromRoute] int studentId)
+        [HttpGet("getstudent")]
+        [Authorize(Roles = "User")]
+        public async Task<IActionResult> GetById()
         {
-            var targetStudent = await _context.Student
-                .Include(s => s.StudentSubjectGrades)
-                .ThenInclude(ssg => ssg.Subject)
-                .FirstOrDefaultAsync(s => s.StudentID == studentId);
-
-            if (targetStudent == null)
+            
+            try
             {
-                return NotFound();
+                var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+                var targetStudent = await _studentService.GetStudentByIdAsync(userId);
+                return Ok(targetStudent);
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(ex.Message);
             }
 
-            return Ok(targetStudent.ToStudentDTO());
+            
         }
 
         //////////////////////////////////////////////////////////////////////////////////
         //Create a student
 
         [HttpPost("create")]
-        public IActionResult Create([FromBody] CreateStudentRequestDTO studentDTO)
+        [Authorize(Roles = "User")]
+        public async Task<IActionResult> Create([FromBody] CreateStudentRequestDTO studentDTO)
         {
-            if (studentDTO == null)
+            
+            try
             {
-                return BadRequest("Student data is required.");
+                var student = await _studentService.CreateStudentAsync(studentDTO);
+                return CreatedAtAction(nameof(GetById), new { studentId = student.StudentID }, student.ToStudentDTO());
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(ex.Message);
             }
 
-            // Check if all subjects exist in the database and retrieve them
-            foreach (var ssg in studentDTO.StudentSubjectGrades)
-            {
-                var targetSubject = _context.Subject.FirstOrDefault(s => s.SubjectID == ssg.SubjectID);
-                if (targetSubject == null)
-                {
-                    return BadRequest($"Subject with ID {ssg.SubjectID} not found.");
-                }
-
-                // Assign the SubjectName (to be returned later in the DTO)
-                ssg.SubjectName = targetSubject.Name;
-            }
-
-            // Map the StudentDTO to a Student entity (including StudentSubjectGrades)
-            var student = studentDTO.ToStudentFromCreateDTO(_context);
-
-            // Add the student to the database
-            _context.Student.Add(student);
-            _context.SaveChanges();
-
-            // Return the created student as a DTO
-            return CreatedAtAction(nameof(GetById), new { studentId = student.StudentID }, student.ToStudentDTO());
+            
         }
 
         //////////////////////////////////////////////////////////////////////////////////
         //Get Subjects by StudentId
 
-        [HttpGet("{studentId}/subjects/get")]
-        public async Task<IActionResult> GetSubjectsById([FromRoute] int studentId)
+        [HttpGet("subjects/get")]
+        [Authorize(Roles = "User")]
+        public async Task<IActionResult> GetSubjectsById([FromQuery]QueryObject query)
         {
-            var student = await _context.Student
-                .Include(s => s.StudentSubjectGrades)
-                .ThenInclude(ssg => ssg.Subject)
-                .FirstOrDefaultAsync(s => s.StudentID == studentId);
-
-            if (student == null)
+            
+            try
             {
-                return NotFound();
+                var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+                var studentsubjects = await _studentService.GetSubjectsStudentIdAsync(query, userId);
+                return Ok(studentsubjects);
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(ex.Message);
             }
 
-            return Ok(student.ToStudentsSubjectOnlyDTO());
+            
         }
 
         //////////////////////////////////////////////////////////////////////////////////
         //Enroll student in a subject
 
-        [HttpPost("{studentId}/subjects/create")]
-        public async Task<IActionResult> Create(int studentId, [FromBody] EnrollinSubjectDTO subjectToEnrollDTO)
+        [HttpPost("subjects/enroll")]
+        [Authorize(Roles = "User")]
+        public async Task<IActionResult> Create([FromQuery]QueryObject query)
         {
-            if (subjectToEnrollDTO == null)
+            try
             {
-                return BadRequest("SubjectID is required.");
+                var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+                var studentSubject = await _studentService.EnrollSubject(query, userId);
+                return CreatedAtAction(nameof(GetById), new { studentId = studentSubject.StudentID }, studentSubject.ToStudentnogradeDTO());
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(ex.Message);
             }
 
-            var studentSubject = await _context.Student.Include(s => s.StudentSubjectGrades).ThenInclude(ssg => ssg.Subject)
-            .FirstOrDefaultAsync(s => s.StudentID == studentId);
-
-            var subjectFromDatabase = _context.Subject.FirstOrDefault(s => s.SubjectID == subjectToEnrollDTO.SubjectID);
-
-            if (studentSubject == null)
-            {
-                return NotFound();
-            };
-
-            var subjectToEnroll = studentSubject.ToSubjectFromCreateDTO(_context, subjectToEnrollDTO, subjectFromDatabase);
-
-
-            _context.StudentSubjectGrade.Add(subjectToEnroll);
-            _context.SaveChanges();
-
-            // Return the created student as a DTO
-            return CreatedAtAction(nameof(GetById), new { studentId = studentSubject.StudentID }, studentSubject.ToStudentnogradeDTO());
+            
         }
 
         //////////////////////////////////////////////////////////////////////////////////
         //Drop class 
 
-        [HttpDelete("{studentId}/subjects/{subjectId}")]
-        public async Task<IActionResult> Delete([FromRoute] int subjectId, int studentId)
+        [HttpDelete("subjects/drop")]
+        [Authorize(Roles = "User")]
+        public async Task<IActionResult> Delete([FromQuery]QueryObject query)
         {
-            var studentSubject = _context.StudentSubjectGrade.FirstOrDefault(ssg => ssg.SubjectID == subjectId & ssg.StudentID == studentId);
-
-            if (studentSubject == null)
+            try
             {
-                return NotFound();
+            var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+             var enrolledSubject = await _studentService.DropClass(query, userId);
+            return Ok(new {Message = "The class was successfully dropped."});
+
             }
-
-            _context.StudentSubjectGrade.Remove(studentSubject);
-
-            _context.SaveChanges();
-
-            return NoContent();
+            catch (Exception ex)
+            {
+                return BadRequest(ex.Message);
+            }
+            
         }
 
         //////////////////////////////////////////////////////////////////////////////////
         //Get Grades from Student
 
-        [HttpGet("{studentId}/subjectsgrades")]
-        public async Task<IActionResult> GetSubjectGradesById([FromRoute] int studentId)
+        [HttpGet("grades")]
+        [Authorize(Roles = "User")]
+        public async Task<IActionResult> GetSubjectGradesById([FromQuery]QueryObject query)
         {
-            var targetStudent = await _context.Student
-                .Include(s => s.StudentSubjectGrades)
-                .ThenInclude(ssg => ssg.Subject)
-                .FirstOrDefaultAsync(s => s.StudentID == studentId);
-
-            if (targetStudent == null)
+           
+            try
             {
-                return NotFound();
+                var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            var students = await _studentService.GetStudentGradesByIdAsync(query, userId);
+            return Ok(students);
             }
-
-            return Ok(targetStudent.ToStudentsSubjectGradesOnlyDTO());
+            catch (Exception ex)
+            {
+                return BadRequest(ex.Message);
+            }
+            
+        }
+         [HttpGet("subjectoptions")]
+         [Authorize(Roles = "User")]
+        public async Task<IActionResult> GetTeacherSubjects([FromQuery]QueryObject query)
+        {
+            try
+            {
+                 var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            var students = await _studentService.GetTeacherSubjects(query);
+            return Ok(students);
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(ex.Message);
+            }
+            
         }
 
 

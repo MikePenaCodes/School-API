@@ -3,53 +3,84 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using api.Models;
+using Microsoft.AspNetCore.Identity;
+using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
 using Models;
 
 namespace Data
 {
-    public class ApplicationDBContext(DbContextOptions dbContextOptions) : DbContext(dbContextOptions)
+    public class ApplicationDBContext : IdentityDbContext<AppUser>
     {
+        public ApplicationDBContext(DbContextOptions<ApplicationDBContext> options) : base(options)
+        { }
         public DbSet<Student> Student { get; set; }
         public DbSet<Teacher> Teacher { get; set; }
         public DbSet<Subject> Subject { get; set; }
-        public DbSet<StudentSubjectGrade> StudentSubjectGrade { get; set; }
-        public DbSet<TeacherSubject> TeacherSubject { get; set; }
-
-        // Configure model relationships
-        protected override void OnModelCreating(ModelBuilder modelBuilder)
+        public DbSet<TeacherSubject> TeacherSubjects { get; set; }
+        public DbSet<StudentSubjectGrade> StudentSubjectGrades { get; set; }
+        protected override void OnModelCreating(ModelBuilder builder)
         {
-            base.OnModelCreating(modelBuilder);
+            base.OnModelCreating(builder);
 
-            // Configure the Student-Subject-Grade relationship (combined model)
-            modelBuilder.Entity<StudentSubjectGrade>()
-                .HasKey(ssg => new { ssg.StudentID, ssg.SubjectID });
+            builder.Entity<Student>()
+            .HasKey(s => s.StudentID);
 
-            modelBuilder.Entity<StudentSubjectGrade>()
+            builder.Entity<Student>()
+            .HasOne(s => s.User)
+            .WithOne() // One-to-one relationship
+            .HasForeignKey<Student>(s => s.UserId)  // Foreign key on Student table
+            .IsRequired() // User must have a student
+            .OnDelete(DeleteBehavior.Cascade);
+
+            builder.Entity<Teacher>()
+            .HasOne(t => t.User)
+            .WithOne()
+            .HasForeignKey<Teacher>(t => t.UserId)
+            .IsRequired()
+            .OnDelete(DeleteBehavior.Cascade);
+
+            // Define relationships and constraints
+            builder.Entity<StudentSubjectGrade>()
+                .HasKey(ssg => new { ssg.StudentID, ssg.TeacherSubjectID });
+
+            // Student - StudentSubjectGrade relationship (one-to-many)
+            builder.Entity<StudentSubjectGrade>()
                 .HasOne(ssg => ssg.Student)
                 .WithMany(s => s.StudentSubjectGrades)
                 .HasForeignKey(ssg => ssg.StudentID);
 
-            modelBuilder.Entity<StudentSubjectGrade>()
-                .HasOne(ssg => ssg.Subject)
-                .WithMany(s => s.StudentSubjectGrades)
-                .HasForeignKey(ssg => ssg.SubjectID);
+            // TeacherSubject - StudentSubjectGrade relationship (one-to-many)
+            builder.Entity<StudentSubjectGrade>()
+                .HasOne(ssg => ssg.TeacherSubject)
+                .WithMany(ts => ts.StudentSubjectGrades)
+                .HasForeignKey(ssg => ssg.TeacherSubjectID);
 
-            // Configure Teacher-Subject relationship (many-to-many)
-            modelBuilder.Entity<TeacherSubject>()
-                .HasKey(ts => new { ts.TeacherID, ts.SubjectID });
-
-            modelBuilder.Entity<TeacherSubject>()
+            builder.Entity<TeacherSubject>()
                 .HasOne(ts => ts.Teacher)
                 .WithMany(t => t.TeacherSubjects)
                 .HasForeignKey(ts => ts.TeacherID);
 
-            modelBuilder.Entity<TeacherSubject>()
+            // Subject - TeacherSubject relationship (one-to-many)
+            builder.Entity<TeacherSubject>()
                 .HasOne(ts => ts.Subject)
                 .WithMany(s => s.TeacherSubjects)
                 .HasForeignKey(ts => ts.SubjectID);
 
-            // You don't need the separate Grade table anymore, since the grade is now part of StudentSubjectGrade
+            List<IdentityRole> roles = new List<IdentityRole>
+           {
+            new IdentityRole
+            {
+                Name = "Admin",
+                NormalizedName = "ADMIN"
+            },
+            new IdentityRole
+            {
+                Name = "User",
+                NormalizedName = "USER"
+            },
+           };
+           builder.Entity<IdentityRole>().HasData(roles);
         }
     }
 }

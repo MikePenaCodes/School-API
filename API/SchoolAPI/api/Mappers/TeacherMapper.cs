@@ -35,37 +35,41 @@ namespace api.Mappers
         {
             return new SubjectDTO
             {
+                SubjectID = subjectModel.SubjectID,
                 Name = subjectModel.Name,
-                TeacherID = subjectModel.TeacherID,
-                StudentSubjectGrades = new List<StudentSubjectGrade>(),
-                TeacherSubjects = new List<TeacherSubject>()
-            .ToList()
             };
-
         }
 
-        public static List<StudentNamesDTO> ToStudentsNamesOnlyDTO(this Teacher teacherModel, int subjectid)
+        public static StudentNamesDTO ToStudentsNamesOnlyDTO(this TeacherSubject teacherSubject)
         {
-            return teacherModel.TeacherSubjects
-            .Where(ts => ts.SubjectID == subjectid)
-        .SelectMany(ts => ts.Subject.StudentSubjectGrades)
-        .Select(ssg => new StudentNamesDTO
+        var studentNames = teacherSubject.StudentSubjectGrades
+        .Select(ssg => new StudentNameGradeDTO
         {
-            StudentID = ssg.Student.StudentID,
+            StudentID = ssg.StudentID,
             Name = ssg.Student.Name,
-        }).ToList();
+            GradeNumber = ssg.GradeNumber
+        })
+        .ToList();
 
+        return new StudentNamesDTO
+        {
+        SubjectID = teacherSubject.TeacherSubjectID,
+        SubjectName = teacherSubject.Subject.Name,
+        Students = studentNames
+        };
         }
-        public static StudentSubjectIDGradeDTO UpdateStudentsGrade(this Teacher teacherModel, int subjectid, int studentid, int? newGrade)
+
+        public static StudentSubjectIDGradeDTO UpdateStudentsGrade(this Teacher teacherModel, int teachersubjectid, int studentid, int? newGrade)
         {
             var studentGrade = teacherModel.TeacherSubjects
-        .Where(ts => ts.SubjectID == subjectid)
-        .SelectMany(ts => ts.Subject.StudentSubjectGrades)
+        .Where(ts => ts.TeacherSubjectID == teachersubjectid)
+        .SelectMany(ts => ts.StudentSubjectGrades)
         .FirstOrDefault(ssg => ssg.StudentID == studentid);
 
             if (studentGrade == null)
             {
                 return null;
+                //Exception
             }
 
             studentGrade.GradeNumber = newGrade;
@@ -82,12 +86,14 @@ namespace api.Mappers
         {
             return teacherModel.TeacherSubjects.Select(ts => new TeacherSubjectDTO
             {
+                TeacherSubjectID = ts.TeacherSubjectID,
                 SubjectID = ts.SubjectID,
                 SubjectName = ts.Subject.Name,
             }).ToList();
 
         }
-        public static Teacher ToTeacherFromCreateDTO(this CreateTeacherRequestDTO teacherDTO, ApplicationDBContext context)
+
+        public static Teacher ToTeacherFromCreateDTO(this CreateTeacherRequestDTO teacherDTO)
         {
             var teacher = new Teacher
             {
@@ -100,48 +106,25 @@ namespace api.Mappers
 
             foreach (var ts in teacherDTO.TeacherSubjects)
             {
-                var subject = context.Subject.FirstOrDefault(s => s.SubjectID == ts.SubjectID);
-                if (subject != null)
-                {
                     var TeacherSubject = new TeacherSubject
                     {
-                        TeacherID = ts.SubjectID,
-                        Subject = subject
+                        TeacherID = teacher.TeacherID,
+                        SubjectID = ts.SubjectID
                     };
                     teacher.TeacherSubjects.Add(TeacherSubject);
-                }
-                else { }
-            }
+
+            };
             return teacher;
 
         }
 
-        public static Subject ToSubjectFromCreateDTO(this CreateSubjectDTO newsubjectDTO, ApplicationDBContext context)
+        public static Subject ToSubjectFromCreateDTO(this CreateSubjectDTO newsubjectDTO)
         {
             var subject = new Subject
             {
                 Name = newsubjectDTO.Name,
-                TeacherID = newsubjectDTO.TeacherID,
-                StudentSubjectGrades = new List<StudentSubjectGrade>(),
-                TeacherSubjects = new List<TeacherSubject>()
+                // TeacherSubjects = new List<TeacherSubject>()
             };
-
-            var teacher = context.Teacher.FirstOrDefault(s => s.TeacherID == subject.TeacherID);
-            if (teacher != null)
-            {
-                var teacherSubject = new TeacherSubject
-                {
-                    TeacherID = subject.TeacherID,
-                    SubjectID = subject.SubjectID,
-                    Teacher = teacher,
-                    Subject = subject
-
-                };
-
-
-                subject.TeacherSubjects.Add(teacherSubject);
-            }
-
 
             return subject;
         }

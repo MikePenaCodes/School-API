@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using api.DTOs;
+using api.Models;
 using Data;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 using Microsoft.EntityFrameworkCore;
@@ -24,8 +25,8 @@ namespace api.Mappers
                 GPA = studentModel.GPA,
                 StudentSubjectGrades = studentModel.StudentSubjectGrades.Select(ssg => new StudentSubjectGradeDTO
                 {
-                    SubjectID = ssg.SubjectID,
-                    SubjectName = ssg.Subject.Name,
+                    TeacherSubjectID = ssg.TeacherSubjectID,
+                    SubjectName = ssg.TeacherSubject.Subject.Name,
                     GradeNumber = ssg.GradeNumber
                 })
         .ToList()
@@ -44,8 +45,8 @@ namespace api.Mappers
             ? studentModel.StudentSubjectGrades
                 .Select(ssg => new StudentSubjectGradeDTO
                 {
-                    SubjectID = ssg.SubjectID,
-                    SubjectName = ssg.Subject?.Name ?? "Unknown Subject" // Handle null Subject gracefully
+                    TeacherSubjectID = ssg.TeacherSubjectID,
+                    SubjectName = ssg.TeacherSubject.Subject?.Name ?? "Unknown Subject" // Handle null Subject gracefully
                 })
                 .ToList()
             : new List<StudentSubjectGradeDTO>() // Handle null StudentSubjectGrades gracefully
@@ -53,12 +54,15 @@ namespace api.Mappers
         }
 
 
-        public static List<StudentSubjectDTO> ToStudentsSubjectOnlyDTO(this Student studentModel)
+        public static List<StudentSubjectTeacherGradeDTO> ToStudentsSubjectOnlyDTO(this Student studentModel)
         {
-            return studentModel.StudentSubjectGrades.Select(ssg => new StudentSubjectDTO
+            return studentModel.StudentSubjectGrades.Select(ssg => new StudentSubjectTeacherGradeDTO
             {
-                SubjectID = ssg.SubjectID,
-                SubjectName = ssg.Subject.Name,
+
+                SubjectName = ssg.TeacherSubject.Subject.Name,
+                TeacherName = ssg.TeacherSubject.Teacher.Name,
+                GradeNumber = ssg.GradeNumber,
+
             }).ToList();
         }
 
@@ -66,13 +70,13 @@ namespace api.Mappers
         {
             return studentModel.StudentSubjectGrades.Select(ssg => new StudentSubjectGradeDTO
             {
-                SubjectID = ssg.SubjectID,
-                SubjectName = ssg.Subject.Name,
+                TeacherSubjectID = ssg.TeacherSubjectID,
+                SubjectName = ssg.TeacherSubject.Subject.Name,
                 GradeNumber = ssg.GradeNumber
             }).ToList();
         }
 
-        public static Student ToStudentFromCreateDTO(this CreateStudentRequestDTO studentDTO, ApplicationDBContext context)
+        public static Student ToStudentFromCreateDTO(this CreateStudentRequestDTO studentDTO, List<TeacherSubject> targetSubjects)
         {
             var student = new Student
             {
@@ -87,43 +91,45 @@ namespace api.Mappers
             // Map StudentSubjectGrades
             foreach (var ssgDTO in studentDTO.StudentSubjectGrades)
             {
-                var subject = context.Subject.FirstOrDefault(s => s.SubjectID == ssgDTO.SubjectID);
-                if (subject != null)
+                var studentSubjectGrade = new StudentSubjectGrade
                 {
-                    var studentSubjectGrade = new StudentSubjectGrade
-                    {
-                        SubjectID = ssgDTO.SubjectID,
-                        Subject = subject, // Link the subject
-                        GradeNumber = ssgDTO.GradeNumber,
-                        Student = student
-                    };
-                    student.StudentSubjectGrades.Add(studentSubjectGrade);
-                }
-                else
-                {
-                    // Optionally, handle the case where the subject was not found, maybe throw an exception
-                    // or return an error if needed
-                    // Example: throw new Exception($"Subject with ID {ssgDTO.SubjectID} not found.");
-                }
+                    TeacherSubjectID = ssgDTO.TeacherSubjectID, // Assign TeacherSubjectId based on the teacher-subject combination
+                    GradeNumber = ssgDTO.GradeNumber,
+                    Student = student,
+                    TeacherSubject = targetSubjects.Find(ts => ts.TeacherSubjectID == ssgDTO.TeacherSubjectID)
+                };
+
+                student.StudentSubjectGrades.Add(studentSubjectGrade);
             }
 
             return student;
         }
 
-
-
-        public static StudentSubjectGrade ToSubjectFromCreateDTO(this Student student, ApplicationDBContext context, EnrollinSubjectDTO newsubjectDTO, Subject subject)
+        public static StudentSubjectGrade ToStudentSubject(this Student student, int? id, TeacherSubject subject)
         {
             return new StudentSubjectGrade
             {
                 StudentID = student.StudentID,
-                SubjectID = newsubjectDTO.SubjectID,
+                TeacherSubjectID = (int)id,
                 Student = student,
-                Subject = subject
+                TeacherSubject = subject,
+                GradeNumber = null
 
             };
 
         }
+        public static TeacherSubjectDTO ToTeacherSubjectDTO(this TeacherSubject teacherSubjectModel)
+        {
+            return new TeacherSubjectDTO
+            {
+               TeacherSubjectID = teacherSubjectModel.TeacherSubjectID,
+                SubjectID = teacherSubjectModel.SubjectID,
+            SubjectName = teacherSubjectModel.Subject.Name
+            };
+        }
+    
+        
+
     }
 
 

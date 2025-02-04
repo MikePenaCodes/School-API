@@ -7,6 +7,6 @@ namespace api.DTOs
 {
     public class EnrollinSubjectDTO
     {
-        public int SubjectID { get; set; }
+        public int TeacherSubjectID { get; set; }
     }
 }

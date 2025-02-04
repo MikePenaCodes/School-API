@@ -7,7 +7,8 @@ namespace api.DTOs
 {
     public class StudentNamesDTO
     {
-        public int StudentID { get; set; }
-        public string Name { get; set; }
+        public int SubjectID { get; set; }
+        public string SubjectName { get; set; }
+        public List<StudentNameGradeDTO?> Students { get; set;}
     }
 }

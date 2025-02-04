@@ -11,9 +11,6 @@ namespace api.DTOs
     {
         public int SubjectID { get; set; }
         public string Name { get; set;}
-        public int TeacherID { get; set; }
-        public ICollection<StudentSubjectGrade> StudentSubjectGrades { get; set; }
-        public ICollection<TeacherSubject> TeacherSubjects { get; set; }
 
     }
 }

@@ -9,7 +9,7 @@ namespace School.Classes
 {
     class Student : Person
     {
-        public int StudentID { get; set; }
+        public string StudentID { get; set; }
        
         public List<Subject> subjectlist = new List<Subject>();
         public double GPA { get; set; }

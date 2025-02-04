@@ -9,10 +9,9 @@ namespace api.DTOs
 {
     public class CreateSubjectDTO
     {
-        public string Name { get; set;}
-        public int TeacherID { get; set; }
-        public ICollection<StudentSubjectGrade> StudentSubjectGrades { get; set; }
-        public ICollection<TeacherSubject> TeacherSubjects { get; set; }
+        public required string Name { get; set;}
+        // public ICollection<StudentSubjectGradeDTO>? StudentSubjectGrades { get; set; }
+        // public ICollection<TeacherSubjectDTO>? TeacherSubjects { get; set; }
 
     }
 }

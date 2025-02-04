@@ -5,6 +5,7 @@ using System.Linq;
 using System.Security.Cryptography.X509Certificates;
 using System.Threading.Tasks;
 using api.DTOs;
+using api.Interfaces;
 using api.Mappers;
 using Data;
 using Microsoft.AspNetCore.Http.HttpResults;
@@ -14,244 +15,248 @@ using Microsoft.Extensions.Logging;
 using Microsoft.VisualStudio.TextTemplating;
 using Models;
 using Pomelo.EntityFrameworkCore.MySql.Storage.Internal;
+using api.ApplicationLayer;
+using api.Models;
+using api.Helpers;
+using Microsoft.AspNetCore.Authorization;
+using System.Security.Claims;
 
 namespace api.Controllers
 {
-    [Route("teachers")]
+    [Route("api/teacher")]
     [ApiController]
     public class TeacherController : ControllerBase
     {
-        private readonly ApplicationDBContext _context;
-        public TeacherController(ApplicationDBContext context)
+        private readonly ITeacherService _teacherService;
+
+        public TeacherController(ITeacherService teacherService)
         {
-            _context = context;
+            _teacherService = teacherService;
+        }
+        //--------------------------------------------------------------------------------
+        //Get All Teachers
+
+        [HttpGet("get")] 
+        [Authorize(Roles = "Admin")]
+        public async Task<IActionResult> GetAll([FromQuery]QueryObject2 query)
+        {
+            try
+            {
+                var teacherDTOs = await _teacherService.GetAllTeachersAsync(query);
+                return Ok(teacherDTOs);
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(ex.Message);
+            }
         }
 
-        //////////////////////////////////////////////////////////////////////////////////
-        //Get All Teacher
-
-        [HttpGet("get")]
-        public async Task<IActionResult> GetAllAsync()
-        {
-            var teachers = await _context.Teacher
-            .Include(t => t.TeacherSubjects)
-            .ThenInclude(ts => ts.Subject)
-            .ToListAsync();
-
-            var teacherDTOs = teachers.Select(t => t.ToTeacherDTO()).ToList();
-
-            return Ok(teacherDTOs);
-        }
-
-        //////////////////////////////////////////////////////////////////////////////////
+        //--------------------------------------------------------------------------------
         //Get a Teacher by ID. 
 
-        [HttpGet("get/{id}")]
-        public async Task<IActionResult> GetById([FromRoute] int id)
+        [HttpGet("getteacher")]
+        [Authorize(Roles = "Admin")]
+        public async Task<IActionResult> GetById()
         {
-            var teacher = await _context.Teacher
-            .Include(t => t.TeacherSubjects)
-            .ThenInclude(ts => ts.Subject)
-            .FirstOrDefaultAsync(t => t.TeacherID == id);
-
-            if (teacher == null)
+            try
             {
-                return NotFound();
+                var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+                var teacherDTOs = await _teacherService.GetTeacherByIdAsync(userId);
+                return Ok(teacherDTOs);
             }
-            return Ok(teacher.ToTeacherDTO());
+            catch (Exception ex)
+            {
+                return BadRequest(ex.Message);
+            }
         }
 
-        ////////////////////////////////////////////////////////////////////////////////        
+        //--------------------------------------------------------------------------------      
         //Create a new Teacher. 
 
         [HttpPost("create")]
-        public IActionResult Create([FromBody] CreateTeacherRequestDTO teacherDTO)
+        [Authorize(Roles = "Admin")]
+        public async Task<IActionResult> Create([FromBody] CreateTeacherRequestDTO teacherDTO)
         {
-            if (teacherDTO == null)
+            try
             {
-                return BadRequest("Teacher data is required.");
+                var teacher = await _teacherService.CreateTeacherAsync(teacherDTO);
+                return CreatedAtAction(nameof(GetById), new { teacherId = teacher.TeacherID }, teacher.ToTeacherDTO());
             }
-
-            foreach (var ts in teacherDTO.TeacherSubjects)
+            catch (Exception ex)
             {
-                var subject = _context.Subject.FirstOrDefault(t => t.SubjectID == ts.SubjectID);
-                if (subject == null)
-                {
-                    return BadRequest($"Subject with ID {ts.SubjectID} not found");
-                }
-
-                ts.SubjectName = subject.Name;
+                return BadRequest(ex.Message);
             }
-            var teacher = teacherDTO.ToTeacherFromCreateDTO(_context);
-
-            _context.Teacher.Add(teacher);
-            _context.SaveChanges();
-
-            return CreatedAtAction(nameof(GetById), new { id = teacher.TeacherID }, teacher.ToTeacherDTO());
         }
 
-        ///////////////////////////////////////////////////////////////////////////////////
+        //--------------------------------------------------------------------------------
         //Get All Subjects.
 
-        [HttpGet("subjects/get")]
-        public async Task<IActionResult> GetAllSubjectsAsync()
+        [HttpGet("subjects")]
+        [Authorize(Roles = "Admin")]
+        public async Task<IActionResult> GetAllSubjects()
         {
-            var subjects = await _context.Subject
-            .ToListAsync();
-
-            var subjectDTOs = subjects.Select(s => s.ToSubjectDTO()).ToList();
-
-            return Ok(subjectDTOs);
+            try
+            {
+                var subjectDTOs = await _teacherService.GetSubjectsAsync();
+                return Ok(subjectDTOs);
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(ex.Message);
+            }
+            
         }
 
-        ////////////////////////////////////////////////////////////////////////////////////
+        //--------------------------------------------------------------------------------
         //Get All Subject for a Teacher.
 
-        [HttpGet("subjects/get/{id}")]
-        public async Task<IActionResult> GetSubjectsById([FromRoute] int id)
+        [HttpGet("subjects/get")]
+        [Authorize(Roles = "Admin")]
+        public async Task<IActionResult> GetSubjectsById()
         {
-            var teacher = await _context.Teacher
-            .Include(t => t.TeacherSubjects)
-            .ThenInclude(ts => ts.Subject)
-            .FirstOrDefaultAsync(t => t.TeacherID == id);
-
-            if (teacher == null)
+            try
             {
-                return NotFound();
+                var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+                var subjectDTOs = await _teacherService.GetSubjectsByTeacherIdAsync(userId);
+                return Ok(subjectDTOs);
             }
-            return Ok(teacher.ToTeacherSubjectsOnlyDTO());
+            catch (Exception ex)
+            {
+                return BadRequest(ex.Message);
+            }
         }
 
-        /////////////////////////////////////////////////////////////////////////////////////
-        //Creates and assigns a Subject to a Teacher. 
+        //--------------------------------------------------------------------------------
+        //Get All Class Choices (Get All TeacherSubjects)
+        [HttpGet("teachersubjects")]
+        [Authorize(Roles = "Admin")]
+        public async Task<IActionResult> GetAllTeacherSubjectsbyteacherId()
+        {
+            try
+            {
+                var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+                var teachersubjects = await _teacherService. GetSubjectsByTeacherIdAsync(userId);
+                return Ok(teachersubjects);
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(ex.Message);
+            }
+        }
+
+        //--------------------------------------------------------------------------------
+        //Creates a Subject 
 
         [HttpPost("subjects/create")]
-        public IActionResult CreateTeacherSubject([FromBody] CreateSubjectDTO newSubjectDTO)
+        [Authorize(Roles = "Admin")]
+        public async Task<IActionResult> CreateSubject([FromBody] CreateSubjectDTO newSubjectDTO)
         {
-            if (newSubjectDTO == null)
+            try
             {
-                return BadRequest("Subject data is required");
+                var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+                var subjectcreated = await _teacherService.CreateSubjectsByTeacherId(newSubjectDTO, userId);
+                return CreatedAtAction(nameof(GetSubjectsById), new { userId = userId },
+                new { Message = "The class was successfully created.", Data = subjectcreated });
             }
-
-            var teacher = _context.Teacher.FirstOrDefault(t => t.TeacherID == newSubjectDTO.TeacherID);
-            if (teacher == null)
+            catch (Exception ex)
             {
-                return BadRequest($"Teacher with ID {newSubjectDTO.TeacherID} not found");
+                return BadRequest(ex.Message);
             }
-
-            var newSubject = newSubjectDTO.ToSubjectFromCreateDTO(_context);
-
-            _context.Subject.Add(newSubject);
-            _context.SaveChanges();
-
-            return CreatedAtAction(nameof(GetSubjectsById), new { id = teacher.TeacherID }, newSubject);
-
         }
 
-        /////////////////////////////////////////////////////////////////////////////////////
+        //--------------------------------------------------------------------------------
+        //Assigns a Subject to a Teacher
+
+        [HttpPost("teachersubjects/assign")]
+        [Authorize(Roles = "Admin")]
+        public async Task<IActionResult> CreateTeacherSubject([FromQuery]QueryObject2 query)
+        {
+            try
+            {
+            var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            var subject = await _teacherService.AssignSubjectToTeacher(query, userId);
+            return CreatedAtAction(nameof(GetAllTeacherSubjectsbyteacherId), new { teacherId = query.TeacherId}, subject);
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(ex.Message);
+            }
+        }
+
+        //--------------------------------------------------------------------------------
         //Removes a Subject from a Teacher.
 
-        [HttpDelete("{teacherId}/subjects/delete/{subjectId}")]
-        public async Task<IActionResult> Delete([FromRoute] int subjectId, int teacherId)
+        [HttpDelete("teachersubjects/delete")]
+        [Authorize(Roles = "Admin")]
+        public async Task<IActionResult> DeleteTeacherSubject([FromQuery]QueryObject2 query)
         {
-            var teacherSubject = _context.TeacherSubject.FirstOrDefault(ssg => ssg.SubjectID == subjectId & ssg.TeacherID == teacherId);
-
-            if (teacherSubject == null)
+            try
             {
-                return NotFound();
-            }
-
-            _context.TeacherSubject.Remove(teacherSubject);
-
-            _context.SaveChanges();
-
+            var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            var result = await _teacherService.RemoveTeacherSubject(query, userId);
             return NoContent();
+            }
+            catch (Exception ex)
+            {
+               return BadRequest(ex.Message);
+            }   
         }
 
-        //////////////////////////////////////////////////////////////////////////////////////
+        //--------------------------------------------------------------------------------
         //Delete a subject.
 
-        [HttpDelete("subjects/delete/{subjectId}")]
-        public async Task<IActionResult> Delete([FromRoute] int subjectId)
+        [HttpDelete("subjects/delete")]
+        [Authorize(Roles = "Admin")]
+        public async Task<IActionResult> DeleteSubject([FromQuery]QueryObject2 query)
         {
-            var subject = _context.Subject.FirstOrDefault(s => s.SubjectID == subjectId);
-
-            if (subject == null)
+            try
             {
-                return NotFound();
+                var result = await _teacherService.DeleteSubjectAsync(query.SubjectId);
+                return NoContent();
             }
-
-            _context.Subject.Remove(subject);
-
-            _context.SaveChanges();
-
-            return NoContent();
+            catch (Exception ex)
+            {
+                return BadRequest(ex.Message);
+            }  
         }
 
-        /////////////////////////////////////////////////////////////////////////////////////////
+        //--------------------------------------------------------------------------------
         //Get all Students in a Subject for a Teacher
 
-        [HttpGet("{teacherId}/subjects/{subjectId}/students/get")]
-        public async Task<IActionResult> GetStudentsBySubject([FromRoute] int teacherId, int subjectId)
+        [HttpGet("subjects/students/get")]
+        [Authorize(Roles = "Admin")]
+        public async Task<IActionResult> GetStudentsBySubject([FromQuery]QueryObject2 query)
         {
-            var teacher = await _context.Teacher
-            .Include(t => t.TeacherSubjects)
-            .ThenInclude(ts => ts.Subject)
-            .ThenInclude(s => s.StudentSubjectGrades)
-            .ThenInclude(ssg => ssg.Student)
-            .Where(t => t.TeacherID == teacherId)
-            //.Where(t => t.TeacherSubjects.Any(ts => ts.Subject.SubjectID == subjectId))
-            .FirstOrDefaultAsync();
-
-            if (teacher == null)
+            try
             {
-                return NotFound("Teacher not found or does not teach the specified subject.");
+                var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+               var teachersubject = await _teacherService.GetAllStudentsBySubject(query, userId);
+               return Ok(teachersubject.ToStudentsNamesOnlyDTO());
             }
-
-            return Ok(teacher.ToStudentsNamesOnlyDTO(subjectId));
+            catch (Exception ex)
+            {
+                return BadRequest(ex.Message);
+            }
         }
 
-        /////////////////////////////////////////////////////////////////////////////////////////////
-        //Update a Student's grade. 
+        // //--------------------------------------------------------------------------------
+        // //Update a Student's grade. 
 
-        [HttpPut("{teacherId}/subjects/{subjectId}/students/update/{studentId}")]
-        public async Task<IActionResult> Update([FromRoute] int teacherId, int subjectId, int studentId, [FromBody] StudentSubjectIDGradeDTO updateDTO)
+        [HttpPut("updategrade")]
+        [Authorize(Roles = "Admin")]
+        public async Task<IActionResult> Update([FromBody] UpgradeStudentSubjectGradeDTO updateDTO)
         {
-            var teacher = await _context.Teacher
-                .Include(t => t.TeacherSubjects)
-                .ThenInclude(ts => ts.Subject)
-                .ThenInclude(s => s.StudentSubjectGrades)
-                .ThenInclude(ssg => ssg.Student)
-                .Where(t => t.TeacherID == teacherId)
-                //.Where(t => t.TeacherSubjects.Any(ts => ts.Subject.SubjectID == subjectId))
-                .FirstOrDefaultAsync();
-
-            if (teacher == null)
+            try
             {
-                return NotFound("Teacher not found or does not teach the specified subject.");
+                var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+                var updatedStudentGrade = await _teacherService.UpdateGrade(updateDTO, userId);
+                return Ok(updatedStudentGrade);
             }
-
-            var updatedStudentGrade = teacher.UpdateStudentsGrade(subjectId, studentId, updateDTO.GradeNumber);
-
-            if (updatedStudentGrade == null)
+            catch (Exception ex)
             {
-                return NotFound("Student or subject not found.");
+                return BadRequest(ex.Message);
             }
-
-            await _context.SaveChangesAsync();
-
-            return Ok(updatedStudentGrade);
-
         }
-
-
-
-
-
-
-
-
-
 
     }
 
