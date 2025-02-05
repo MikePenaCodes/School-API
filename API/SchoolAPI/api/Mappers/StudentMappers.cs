@@ -122,9 +122,10 @@ namespace api.Mappers
         {
             return new TeacherSubjectDTO
             {
-               TeacherSubjectID = teacherSubjectModel.TeacherSubjectID,
+                TeacherSubjectID = teacherSubjectModel.TeacherSubjectID,
+                TeacherName = teacherSubjectModel.Teacher.Name, 
                 SubjectID = teacherSubjectModel.SubjectID,
-            SubjectName = teacherSubjectModel.Subject.Name
+                SubjectName = teacherSubjectModel.Subject.Name
             };
         }
     

@@ -12,6 +12,9 @@ namespace api.Helpers
         public int? SubjectId {get; set;} = null;
         public int PageNumber {get; set;} = 1;
         public int PageSize {get;set;} = 10;
+        public string? SubjectName {get; set;} = null;
+        public string? TeacherName {get; set;} = null;
+
         
     }
 }

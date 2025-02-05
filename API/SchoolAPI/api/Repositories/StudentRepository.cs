@@ -102,6 +102,7 @@ namespace api.Repositories
         {
             var teachersubjects = await _context.TeacherSubjects
                 .Include(s =>s.Subject)
+                .Include(s =>s.Teacher)
                 .Skip(skip)
                 .Take(pageSize)
                 .ToListAsync();

@@ -8,7 +8,6 @@ namespace api.Services;
 
 public class EmailService : IEmailService
 {
-
     public async Task<bool> SendEmail(string body, string subject, string to)
     {
         Env.Load();
@@ -24,13 +23,11 @@ public class EmailService : IEmailService
         _email.Subject = subject;
         _email.Body = new TextPart(MimeKit.Text.TextFormat.Html) { Text = body };
 
-
         using var smtp = new SmtpClient();
         smtp.Connect(smtpServer, port, MailKit.Security.SecureSocketOptions.StartTls);
         smtp.Authenticate(from, password);
         smtp.Send(_email);
         smtp.Disconnect(true);
         return true;
-
     }
 }
