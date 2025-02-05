@@ -23,5 +23,6 @@ namespace api.Interfaces
     Task<Subject> DeleteSubjectAsync(int? subjectId);
     Task<TeacherSubject> GetAllStudentsBySubject(QueryObject2 query, string id);
     Task<StudentSubjectIDGradeDTO> UpdateGrade(UpgradeStudentSubjectGradeDTO updateDTO, string id);
+    Task<List<StudentDTO>> GetAllStudentsAsync(QueryObject query);  //Get All Studentsd
     }
 }

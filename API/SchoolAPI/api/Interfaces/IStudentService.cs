@@ -10,7 +10,7 @@ namespace api.Interfaces
 {
     public interface IStudentService
     {
-    Task<List<StudentDTO>> GetAllStudentsAsync(QueryObject query);  //Get All Studentsd
+    
     Task<StudentDTO> GetStudentByIdAsync(string id);   //Get Student by Id
     Task<Student> CreateStudentAsync(CreateStudentRequestDTO studentDTO); //Create a student
     Task<List<StudentSubjectTeacherGradeDTO>> GetSubjectsStudentIdAsync(QueryObject query, string id); //Get Subjects by StudentId 

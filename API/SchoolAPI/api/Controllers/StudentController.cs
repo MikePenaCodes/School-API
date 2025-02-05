@@ -28,23 +28,7 @@ namespace api.Controllers
             _studentService = studentService;
         }
 
-        //////////////////////////////////////////////////////////////////////////////////
-        //Get All Students
-
-        [HttpGet("get")]
-        [Authorize(Roles = "User")]
-        public async Task<IActionResult> GetAllAsync([FromQuery]QueryObject query)
-        {
-            try
-            {
-                var allStudent = await _studentService.GetAllStudentsAsync(query);
-                return Ok(allStudent); // Return the DTOs
-            }
-            catch (Exception ex)
-            {
-                return BadRequest(ex.Message);;
-            }
-        }
+        
 
         //////////////////////////////////////////////////////////////////////////////////
         //Get Student by Id

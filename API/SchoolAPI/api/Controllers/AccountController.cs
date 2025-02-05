@@ -71,8 +71,8 @@ namespace api.Controllers
             );
         }
 
-    // need to input email and send email a code 
-    // make a new endpoint with that can request code
+        // need to input email and send email a code 
+        // make a new endpoint with that can request code
 
 
 
@@ -103,12 +103,12 @@ namespace api.Controllers
         {
             // if (string.IsNullOrEmpty(newPassWordDto.Email))
             //     return BadRequest("Invalid code provided");
-            
+
             var user = await GetUser(newPassWordDto.Email);
 
 
             var result = await _userManager.ResetPasswordAsync(user, newPassWordDto.Code.ToString(), newPassWordDto.Password);
-           
+
             if (!result.Succeeded)
                 return BadRequest(result);
             else
@@ -117,7 +117,7 @@ namespace api.Controllers
         }
 
 
-    
+
         [HttpPost("register")]
         public async Task<IActionResult> Register([FromBody] RegisterDto registerDto)
         {
@@ -127,7 +127,7 @@ namespace api.Controllers
                     return BadRequest(ModelState);
 
                 var user = await GetUser(registerDto.Email);
-                if (user != null) return BadRequest();
+                if (user != null) return BadRequest("A student with that email already exists.");
 
 
                 var appUser = new AppUser
@@ -155,14 +155,6 @@ namespace api.Controllers
 
                         _context.Student.Add(student);
                         await _context.SaveChangesAsync();
-
-
-                        // return Ok(new newUserDto
-                        // {
-                        //     UserName = appUser.UserName,
-                        //     Email = appUser.Email,
-                        //     Token = await _tokenService.CreateToken(appUser)
-                        // });
                     }
 
                     else
@@ -203,10 +195,12 @@ namespace api.Controllers
             string message = emailMessage.ToString();
             string subject = "Password Reset";
             var emailSent = await _emailService.SendEmail(message, subject, _user.Email);
-            if (emailSent){
-            return "You have requested a password reset. Kindly check your email for a verification code. ";
+            if (emailSent)
+            {
+                return "You have requested a password reset. Kindly check your email for a verification code. ";
             }
-            else{
+            else
+            {
                 return "There was a connection error sending the password reset email. Please try again later. ";
             }
         }
@@ -227,14 +221,16 @@ namespace api.Controllers
             emailMessage.AppendLine("</body>");
             emailMessage.AppendLine("</hmtl>");
 
-            
+
             string message = emailMessage.ToString();
             string subject = "Email Confirmation";
             var emailSent = await _emailService.SendEmail(message, subject, user.Email);
-            if (emailSent){
-            return "Thank you for registering. Kindly check your email for a confirmation email.";
+            if (emailSent)
+            {
+                return "Thank you for registering. Kindly check your email for a confirmation email.";
             }
-            else{
+            else
+            {
                 await _userManager.DeleteAsync(user);
                 await _context.SaveChangesAsync();
 
@@ -267,7 +263,7 @@ namespace api.Controllers
                     return BadRequest(ModelState);
 
                 var user = await GetUser(registerDto.Email);
-                if (user != null) return BadRequest();
+                if (user != null) return BadRequest("A teacher with that email already exists");
 
 
                 var appUser = new AppUser

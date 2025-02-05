@@ -22,19 +22,7 @@ namespace api.ApplicationLayer
         {
             _studentRepository = studentRepository;
         }
-        public async Task<List<StudentDTO>> GetAllStudentsAsync(QueryObject query)
-        {
-            //Calculate how many records to skip. 
-            var skipNumber = (query.PageNumber - 1) * query.PageSize;
-
-            //Fetch paginated students from the repository
-            var allStudents = await _studentRepository.GetPaginatedStudentsAsync(skipNumber, query.PageSize);
-
-            //Map students to DTOs. 
-            var studentDtos = allStudents.Select(s => s.ToStudentDTO()).ToList();
-
-            return studentDtos;
-        }
+        
         public async Task<StudentDTO> GetStudentByIdAsync(string id)
         {
             var targetStudent = await _studentRepository.GetStudentbyId(id);
@@ -96,9 +84,9 @@ namespace api.ApplicationLayer
                     throw new Exception("Students is already enrolled in this class.");
                 }
                 if (ssg.TeacherSubject.SubjectID == subjectFromDatabase.SubjectID)
-        {
-            throw new Exception("Student is already enrolled in a different class with the same subject.");
-        }     
+                {
+                    throw new Exception("Student is already enrolled in a different class with the same subject.");
+                }
             }
             var subjectToEnroll = targetStudent.ToStudentSubject(query.TeacherSubjectId, subjectFromDatabase);
 
@@ -112,7 +100,7 @@ namespace api.ApplicationLayer
             var student = await _studentRepository.GetStudentbyId(id);
 
             var studentSubjectGrade = student.StudentSubjectGrades.FirstOrDefault(ssg => ssg.TeacherSubjectID == query.TeacherSubjectId);
-            if(studentSubjectGrade == null)
+            if (studentSubjectGrade == null)
             {
                 throw new Exception("");
             }
@@ -136,8 +124,24 @@ namespace api.ApplicationLayer
             //Calculate how many records to skip. 
             var skipNumber = (query.PageNumber - 1) * query.PageSize;
 
-            //Fetch paginated students from the repository
+            
             var allTeacherSubjects = await _studentRepository.GetPaginatedTeacherSubjectsAsync(skipNumber, query.PageSize);
+
+
+            if (!string.IsNullOrEmpty(query.SubjectName))
+            {
+                allTeacherSubjects = allTeacherSubjects
+                    .Where(ts => ts.Subject.Name.Contains(query.SubjectName))
+                    .ToList();
+            }
+
+            if (!string.IsNullOrEmpty(query.TeacherName))
+            {
+                allTeacherSubjects = allTeacherSubjects
+                    .Where(ts => ts.Teacher.Name.Contains(query.TeacherName))
+                    .ToList();
+            }
+
 
             //Map students to DTOs. 
             var teacherSubjectDtos = allTeacherSubjects.Select(s => s.ToTeacherSubjectDTO()).ToList();

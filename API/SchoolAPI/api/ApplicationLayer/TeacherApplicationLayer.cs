@@ -18,10 +18,12 @@ namespace api.ApplicationLayer
 {
     public class TeacherApplicationLayer : ITeacherService
     {
+        private readonly IStudentRepository _studentRepository;
         private readonly ITeacherRepository _teacherRepository;
-        public TeacherApplicationLayer(ITeacherRepository teacherRepository)
+        public TeacherApplicationLayer(ITeacherRepository teacherRepository, IStudentRepository studentRepository)
         {
             _teacherRepository = teacherRepository;
+            _studentRepository = studentRepository;
         }
         
         public async Task<List<TeacherDTO>> GetAllTeachersAsync(QueryObject2 query)
@@ -191,6 +193,20 @@ namespace api.ApplicationLayer
 
             return updatedStudentGrade;
 
+        }
+
+        public async Task<List<StudentDTO>> GetAllStudentsAsync(QueryObject query)
+        {
+            //Calculate how many records to skip. 
+            var skipNumber = (query.PageNumber - 1) * query.PageSize;
+
+            //Fetch paginated students from the repository
+            var allStudents = await _studentRepository.GetPaginatedStudentsAsync(skipNumber, query.PageSize);
+
+            //Map students to DTOs. 
+            var studentDtos = allStudents.Select(s => s.ToStudentDTO()).ToList();
+
+            return studentDtos;
         }
     }
 }

@@ -194,7 +194,7 @@ namespace api.Controllers
             {
             var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
             var result = await _teacherService.RemoveTeacherSubject(query, userId);
-            return NoContent();
+            return Ok(new {Message = "The class was successfully dropped."});
             }
             catch (Exception ex)
             {
@@ -212,7 +212,7 @@ namespace api.Controllers
             try
             {
                 var result = await _teacherService.DeleteSubjectAsync(query.SubjectId);
-                return NoContent();
+                return Ok(new {Message = "The subject was successfully deleted."});
             }
             catch (Exception ex)
             {
@@ -255,6 +255,23 @@ namespace api.Controllers
             catch (Exception ex)
             {
                 return BadRequest(ex.Message);
+            }
+        }
+        //////////////////////////////////////////////////////////////////////////////////
+        //Get All Students
+
+        [HttpGet("getallstudents")]
+        [Authorize(Roles = "Admin")]
+        public async Task<IActionResult> GetAllAsync([FromQuery]QueryObject query)
+        {
+            try
+            {
+                var allStudent = await _teacherService.GetAllStudentsAsync(query);
+                return Ok(allStudent); // Return the DTOs
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(ex.Message);;
             }
         }
 
