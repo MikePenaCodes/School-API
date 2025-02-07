@@ -12,11 +12,11 @@ namespace Models
     {
         [Key]
         public int StudentID { get; set; }
-        public string Name { get; set;}
-        public int Age { get; set;}
-        public string Address { get; set;}
-        public int GPA  { get; set;}
-        public ICollection<StudentSubjectGrade>? StudentSubjectGrades {get; set;}
+        public string Name { get; set; }
+        public int Age { get; set; }
+        public string Address { get; set; }
+        public int? GPA { get; set; } = null;
+        public ICollection<StudentSubjectGrade>? StudentSubjectGrades { get; set; }
         public string UserId { get; set; }
         public AppUser User { get; set; }
     }

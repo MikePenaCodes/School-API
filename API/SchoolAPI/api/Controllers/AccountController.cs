@@ -1,22 +1,15 @@
-using System;
-using System.Collections.Generic;
-using System.Linq;
 using System.Text;
-using System.Threading.Tasks;
 using api.DTOs;
 using api.Interfaces;
 using api.Models;
 using Data;
-using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
-using MimeKit;
 using Models;
-using RouteAttribute = Microsoft.AspNetCore.Components.RouteAttribute;
-using MailKit.Net.Smtp;
-using Microsoft.AspNetCore.Identity.UI.V4.Pages.Account.Internal;
 using api.Services;
+using Microsoft.AspNetCore.Authorization;
+using System.Security.Claims;
 
 
 namespace api.Controllers
@@ -149,7 +142,6 @@ namespace api.Controllers
                             Name = registerDto.Name,
                             Age = registerDto.Age,
                             Address = registerDto.Address,
-                            GPA = registerDto.GPA,
                             UserId = appUser.Id
                         };
 
@@ -292,12 +284,6 @@ namespace api.Controllers
                         _context.Teacher.Add(teacher);
                         await _context.SaveChangesAsync();
 
-                        // return Ok(new newUserDto
-                        // {
-                        //     UserName = appUser.UserName,
-                        //     Email = appUser.Email,
-                        //     Token = await _tokenService.CreateToken(appUser)
-                        // });
                     }
                     else
                     {
@@ -319,5 +305,29 @@ namespace api.Controllers
             }
         }
 
+        //--------------------------------------------------------------------------------
+        //Delete an account.
+
+        [HttpDelete("delete")]
+        [Authorize()]
+        public async Task<IActionResult> DeleteSubject()
+        {
+            try
+            {
+                var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+                var user = await _userManager.FindByIdAsync(userId);
+                var result = await _userManager.DeleteAsync(user);
+                return Ok(new { Message = "The account was successfully deleted." });
+            }
+            catch (Exception ex)
+            {
+                var innerException = ex.InnerException;
+                if (innerException != null)
+                {
+                    return BadRequest(new { Message = "Database error while deleting the account. You are still assigned to a course. Please unenroll from all courses before deleting your account.", ErrorDetails = innerException.Message });
+                }
+                return BadRequest(new { Message = "An error occurred while deleting the account.", ErrorDetails = ex.Message });
+            }
+        }
     }
 }

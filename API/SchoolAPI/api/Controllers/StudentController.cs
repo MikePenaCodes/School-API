@@ -28,7 +28,7 @@ namespace api.Controllers
             _studentService = studentService;
         }
 
-        
+
 
         //////////////////////////////////////////////////////////////////////////////////
         //Get Student by Id
@@ -37,7 +37,7 @@ namespace api.Controllers
         [Authorize(Roles = "User")]
         public async Task<IActionResult> GetById()
         {
-            
+
             try
             {
                 var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
@@ -49,7 +49,7 @@ namespace api.Controllers
                 return BadRequest(ex.Message);
             }
 
-            
+
         }
 
         //////////////////////////////////////////////////////////////////////////////////
@@ -59,7 +59,7 @@ namespace api.Controllers
         [Authorize(Roles = "User")]
         public async Task<IActionResult> Create([FromBody] CreateStudentRequestDTO studentDTO)
         {
-            
+
             try
             {
                 var student = await _studentService.CreateStudentAsync(studentDTO);
@@ -70,7 +70,7 @@ namespace api.Controllers
                 return BadRequest(ex.Message);
             }
 
-            
+
         }
 
         //////////////////////////////////////////////////////////////////////////////////
@@ -78,9 +78,9 @@ namespace api.Controllers
 
         [HttpGet("subjects/get")]
         [Authorize(Roles = "User")]
-        public async Task<IActionResult> GetSubjectsById([FromQuery]QueryObject query)
+        public async Task<IActionResult> GetSubjectsById([FromQuery] QueryObject query)
         {
-            
+
             try
             {
                 var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
@@ -92,7 +92,7 @@ namespace api.Controllers
                 return BadRequest(ex.Message);
             }
 
-            
+
         }
 
         //////////////////////////////////////////////////////////////////////////////////
@@ -100,7 +100,7 @@ namespace api.Controllers
 
         [HttpPost("subjects/enroll")]
         [Authorize(Roles = "User")]
-        public async Task<IActionResult> Create([FromQuery]QueryObject query)
+        public async Task<IActionResult> Create([FromQuery] QueryObject query)
         {
             try
             {
@@ -112,8 +112,6 @@ namespace api.Controllers
             {
                 return BadRequest(ex.Message);
             }
-
-            
         }
 
         //////////////////////////////////////////////////////////////////////////////////
@@ -121,20 +119,20 @@ namespace api.Controllers
 
         [HttpDelete("subjects/drop")]
         [Authorize(Roles = "User")]
-        public async Task<IActionResult> Delete([FromQuery]QueryObject query)
+        public async Task<IActionResult> Delete([FromQuery] QueryObject query)
         {
             try
             {
-            var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-             var enrolledSubject = await _studentService.DropClass(query, userId);
-            return Ok(new {Message = "The class was successfully dropped."});
+                var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+                var enrolledSubject = await _studentService.DropClass(query, userId);
+                return Ok(new { Message = "The class was successfully dropped." });
 
             }
             catch (Exception ex)
             {
                 return BadRequest(ex.Message);
             }
-            
+
         }
 
         //////////////////////////////////////////////////////////////////////////////////
@@ -142,40 +140,36 @@ namespace api.Controllers
 
         [HttpGet("grades")]
         [Authorize(Roles = "User")]
-        public async Task<IActionResult> GetSubjectGradesById([FromQuery]QueryObject query)
+        public async Task<IActionResult> GetSubjectGradesById([FromQuery] QueryObject query)
         {
-           
+
             try
             {
                 var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-            var students = await _studentService.GetStudentGradesByIdAsync(query, userId);
-            return Ok(students);
+                var students = await _studentService.GetStudentGradesByIdAsync(query, userId);
+                return Ok(students);
             }
             catch (Exception ex)
             {
                 return BadRequest(ex.Message);
             }
-            
+
         }
-         [HttpGet("subjectoptions")]
-         [Authorize(Roles = "User")]
-        public async Task<IActionResult> GetTeacherSubjects([FromQuery]QueryObject query)
+        [HttpGet("subjectoptions")]
+        [Authorize(Roles = "User")]
+        public async Task<IActionResult> GetTeacherSubjects([FromQuery] QueryObject query)
         {
             try
             {
-                 var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-            var students = await _studentService.GetTeacherSubjects(query);
-            return Ok(students);
+                var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+                var students = await _studentService.GetTeacherSubjects(query);
+                return Ok(students);
             }
             catch (Exception ex)
             {
                 return BadRequest(ex.Message);
             }
-            
         }
-
-
-
     }
 
 }

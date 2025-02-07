@@ -42,21 +42,21 @@ namespace api.Mappers
 
         public static StudentNamesDTO ToStudentsNamesOnlyDTO(this TeacherSubject teacherSubject)
         {
-        var studentNames = teacherSubject.StudentSubjectGrades
-        .Select(ssg => new StudentNameGradeDTO
-        {
-            StudentID = ssg.StudentID,
-            Name = ssg.Student.Name,
-            GradeNumber = ssg.GradeNumber
-        })
-        .ToList();
+            var studentNames = teacherSubject.StudentSubjectGrades
+            .Select(ssg => new StudentNameGradeDTO
+            {
+                StudentID = ssg.StudentID,
+                Name = ssg.Student.Name,
+                GradeNumber = ssg.GradeNumber
+            })
+            .ToList();
 
-        return new StudentNamesDTO
-        {
-        SubjectID = teacherSubject.TeacherSubjectID,
-        SubjectName = teacherSubject.Subject.Name,
-        Students = studentNames
-        };
+            return new StudentNamesDTO
+            {
+                SubjectID = teacherSubject.TeacherSubjectID,
+                SubjectName = teacherSubject.Subject.Name,
+                Students = studentNames
+            };
         }
 
         public static StudentSubjectIDGradeDTO UpdateStudentsGrade(this Teacher teacherModel, int teachersubjectid, int studentid, int? newGrade)
@@ -106,14 +106,15 @@ namespace api.Mappers
 
             foreach (var ts in teacherDTO.TeacherSubjects)
             {
-                    var TeacherSubject = new TeacherSubject
-                    {
-                        TeacherID = teacher.TeacherID,
-                        SubjectID = ts.SubjectID
-                    };
-                    teacher.TeacherSubjects.Add(TeacherSubject);
+                var TeacherSubject = new TeacherSubject
+                {
+                    TeacherID = teacher.TeacherID,
+                    SubjectID = ts.SubjectID
+                };
+                teacher.TeacherSubjects.Add(TeacherSubject);
 
-            };
+            }
+            ;
             return teacher;
 
         }
@@ -123,6 +124,7 @@ namespace api.Mappers
             var subject = new Subject
             {
                 Name = newsubjectDTO.Name,
+                Hours = newsubjectDTO.Hours,
                 // TeacherSubjects = new List<TeacherSubject>()
             };
 

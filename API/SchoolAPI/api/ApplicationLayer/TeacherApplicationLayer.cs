@@ -25,7 +25,7 @@ namespace api.ApplicationLayer
             _teacherRepository = teacherRepository;
             _studentRepository = studentRepository;
         }
-        
+
         public async Task<List<TeacherDTO>> GetAllTeachersAsync(QueryObject2 query)
         {
             //Calculate how many records to skip. 
@@ -140,6 +140,10 @@ namespace api.ApplicationLayer
         {
             var teacher = await _teacherRepository.GetTeacherById(id);
             var teacherSubjectFound = await _teacherRepository.GetTeacherSubjects(query.TeacherSubjectId);
+            if (teacherSubjectFound == null)
+            {
+                throw new KeyNotFoundException($"TeacherSubject with ID {query.TeacherSubjectId} not found");
+            }
             if (!(teacherSubjectFound.TeacherID == teacher.TeacherID))
             {
                 throw new Exception($"You are not assigned to TeacherSubject {query.TeacherSubjectId}");
@@ -181,6 +185,36 @@ namespace api.ApplicationLayer
             }
 
             var teacher = await _teacherRepository.GetAllTables(id);
+            var hourstaken = 0;
+            foreach (var ts in teacher.TeacherSubjects)
+            {
+                var subjecthours = ts.Subject.Hours;
+                hourstaken = hourstaken + subjecthours;
+
+            }
+
+            int? totalgradepoints = 0;
+            foreach (var ts in teacher.TeacherSubjects)
+            {
+                var studentclassinfo = ts.StudentSubjectGrades.Where(s => s.StudentID == updateDTO.StudentID).FirstOrDefault();
+                if (studentclassinfo != null)
+                {
+                    totalgradepoints = totalgradepoints + studentclassinfo.GradeNumber;
+                }
+            }
+
+
+
+
+
+            //Formula to calculate GPA:  GPA = (Total Grade Points) / (HOURS TAKEN)
+
+
+
+
+
+
+            //teacher.TeacherSubjects.Subjects.Where(s => s.SubjectID == updateDTO.TeacherSubjectID).FirstOrDefault();
 
             var updatedStudentGrade = teacher.UpdateStudentsGrade(updateDTO.TeacherSubjectID, updateDTO.StudentID, updateDTO.GradeNumber);
 

@@ -21,8 +21,6 @@ namespace api.DTOs
         public int Age { get; set; }
         [Required]
         public string Address { get; set; }
-        [Required]
-        public int GPA {get; set; }
 
     }
 }

@@ -1,22 +1,7 @@
-using System;
-using System.Collections.Generic;
-using System.Diagnostics;
-using System.Linq;
-using System.Security.Cryptography.X509Certificates;
-using System.Threading.Tasks;
 using api.DTOs;
 using api.Interfaces;
 using api.Mappers;
-using Data;
-using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.Logging;
-using Microsoft.VisualStudio.TextTemplating;
-using Models;
-using Pomelo.EntityFrameworkCore.MySql.Storage.Internal;
-using api.ApplicationLayer;
-using api.Models;
 using api.Helpers;
 using Microsoft.AspNetCore.Authorization;
 using System.Security.Claims;
@@ -36,9 +21,9 @@ namespace api.Controllers
         //--------------------------------------------------------------------------------
         //Get All Teachers
 
-        [HttpGet("get")] 
+        [HttpGet("get")]
         [Authorize(Roles = "Admin")]
-        public async Task<IActionResult> GetAll([FromQuery]QueryObject2 query)
+        public async Task<IActionResult> GetAll([FromQuery] QueryObject2 query)
         {
             try
             {
@@ -104,7 +89,7 @@ namespace api.Controllers
             {
                 return BadRequest(ex.Message);
             }
-            
+
         }
 
         //--------------------------------------------------------------------------------
@@ -135,7 +120,7 @@ namespace api.Controllers
             try
             {
                 var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-                var teachersubjects = await _teacherService. GetSubjectsByTeacherIdAsync(userId);
+                var teachersubjects = await _teacherService.GetSubjectsByTeacherIdAsync(userId);
                 return Ok(teachersubjects);
             }
             catch (Exception ex)
@@ -169,13 +154,13 @@ namespace api.Controllers
 
         [HttpPost("teachersubjects/assign")]
         [Authorize(Roles = "Admin")]
-        public async Task<IActionResult> CreateTeacherSubject([FromQuery]QueryObject2 query)
+        public async Task<IActionResult> CreateTeacherSubject([FromQuery] QueryObject2 query)
         {
             try
             {
-            var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-            var subject = await _teacherService.AssignSubjectToTeacher(query, userId);
-            return CreatedAtAction(nameof(GetAllTeacherSubjectsbyteacherId), new { teacherId = query.TeacherId}, subject);
+                var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+                var subject = await _teacherService.AssignSubjectToTeacher(query, userId);
+                return CreatedAtAction(nameof(GetAllTeacherSubjectsbyteacherId), new { teacherId = query.TeacherId }, subject);
             }
             catch (Exception ex)
             {
@@ -188,18 +173,23 @@ namespace api.Controllers
 
         [HttpDelete("teachersubjects/delete")]
         [Authorize(Roles = "Admin")]
-        public async Task<IActionResult> DeleteTeacherSubject([FromQuery]QueryObject2 query)
+        public async Task<IActionResult> DeleteTeacherSubject([FromQuery] QueryObject2 query)
         {
             try
             {
-            var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-            var result = await _teacherService.RemoveTeacherSubject(query, userId);
-            return Ok(new {Message = "The class was successfully dropped."});
+                var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+                var result = await _teacherService.RemoveTeacherSubject(query, userId);
+                return Ok(new { Message = "The class was successfully dropped." });
             }
             catch (Exception ex)
             {
-               return BadRequest(ex.Message);
-            }   
+                var innerException = ex.InnerException;
+                if (innerException != null)
+                {
+                    return BadRequest(new { Message = "Database error while deleting the class. This class still contains students. Please make sure the class is empty before deleting it.", ErrorDetails = innerException.Message });
+                }
+                return BadRequest(new { Message = "An error occurred while deleting the class.", ErrorDetails = ex.Message });
+            }
         }
 
         //--------------------------------------------------------------------------------
@@ -207,17 +197,22 @@ namespace api.Controllers
 
         [HttpDelete("subjects/delete")]
         [Authorize(Roles = "Admin")]
-        public async Task<IActionResult> DeleteSubject([FromQuery]QueryObject2 query)
+        public async Task<IActionResult> DeleteSubject([FromQuery] QueryObject2 query)
         {
             try
             {
                 var result = await _teacherService.DeleteSubjectAsync(query.SubjectId);
-                return Ok(new {Message = "The subject was successfully deleted."});
+                return Ok(new { Message = "The subject was successfully deleted." });
             }
             catch (Exception ex)
             {
-                return BadRequest(ex.Message);
-            }  
+                var innerException = ex.InnerException;
+                if (innerException != null)
+                {
+                    return BadRequest(new { Message = "Database error while deleting the subject. This subject is still being taught. Please make sure there are no classes with this subject before deleting it.", ErrorDetails = innerException.Message });
+                }
+                return BadRequest(new { Message = "An error occurred while deleting the subject.", ErrorDetails = ex.Message });
+            }
         }
 
         //--------------------------------------------------------------------------------
@@ -225,13 +220,13 @@ namespace api.Controllers
 
         [HttpGet("subjects/students/get")]
         [Authorize(Roles = "Admin")]
-        public async Task<IActionResult> GetStudentsBySubject([FromQuery]QueryObject2 query)
+        public async Task<IActionResult> GetStudentsBySubject([FromQuery] QueryObject2 query)
         {
             try
             {
                 var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-               var teachersubject = await _teacherService.GetAllStudentsBySubject(query, userId);
-               return Ok(teachersubject.ToStudentsNamesOnlyDTO());
+                var teachersubject = await _teacherService.GetAllStudentsBySubject(query, userId);
+                return Ok(teachersubject.ToStudentsNamesOnlyDTO());
             }
             catch (Exception ex)
             {
@@ -262,7 +257,7 @@ namespace api.Controllers
 
         [HttpGet("getallstudents")]
         [Authorize(Roles = "Admin")]
-        public async Task<IActionResult> GetAllAsync([FromQuery]QueryObject query)
+        public async Task<IActionResult> GetAllAsync([FromQuery] QueryObject query)
         {
             try
             {
@@ -271,7 +266,7 @@ namespace api.Controllers
             }
             catch (Exception ex)
             {
-                return BadRequest(ex.Message);;
+                return BadRequest(ex.Message); ;
             }
         }
 

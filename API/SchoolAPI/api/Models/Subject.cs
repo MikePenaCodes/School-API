@@ -10,8 +10,8 @@ namespace Models
     public class Subject
     {
         public int SubjectID { get; set; }
-        public string Name { get; set;}
-        // public int TeacherID { get; set; }
+        public string Name { get; set; }
+        public int Hours { get; set; }
         public ICollection<TeacherSubject>? TeacherSubjects { get; set; }
 
     }
