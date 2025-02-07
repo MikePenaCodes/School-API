@@ -15,7 +15,7 @@ namespace Models
         public string Name { get; set; }
         public int Age { get; set; }
         public string Address { get; set; }
-        public int? GPA { get; set; } = null;
+        public string? GPA { get; set; } = null;
         public ICollection<StudentSubjectGrade>? StudentSubjectGrades { get; set; }
         public string UserId { get; set; }
         public AppUser User { get; set; }

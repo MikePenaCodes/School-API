@@ -11,7 +11,7 @@ namespace api.DTOs
         public string Name { get; set; }
         public int Age { get; set; }
         public string Address { get; set; }
-        public int? GPA { get; set; }
+        public string? GPA { get; set; } = "Not Yet Determined";
         public List<StudentSubjectGradeDTO> StudentSubjectGrades { get; set; }
     }
 }

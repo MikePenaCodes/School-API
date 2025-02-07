@@ -82,6 +82,11 @@ namespace api.Mappers
             };
         }
 
+        public static void UpdateGPA(this Student studentModel, string newGPA)
+        {
+            studentModel.GPA = newGPA;
+        }
+
         public static List<TeacherSubjectDTO> ToTeacherSubjectsOnlyDTO(this Teacher teacherModel)
         {
             return teacherModel.TeacherSubjects.Select(ts => new TeacherSubjectDTO

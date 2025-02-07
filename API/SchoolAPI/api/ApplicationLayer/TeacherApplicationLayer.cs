@@ -183,39 +183,13 @@ namespace api.ApplicationLayer
             {
                 throw new Exception("Invalid Grade. The Grade range is 0-100");
             }
-
+            
             var teacher = await _teacherRepository.GetAllTables(id);
-            var hourstaken = 0;
-            foreach (var ts in teacher.TeacherSubjects)
-            {
-                var subjecthours = ts.Subject.Hours;
-                hourstaken = hourstaken + subjecthours;
-
-            }
-
-            int? totalgradepoints = 0;
-            foreach (var ts in teacher.TeacherSubjects)
-            {
-                var studentclassinfo = ts.StudentSubjectGrades.Where(s => s.StudentID == updateDTO.StudentID).FirstOrDefault();
-                if (studentclassinfo != null)
-                {
-                    totalgradepoints = totalgradepoints + studentclassinfo.GradeNumber;
-                }
-            }
-
-
-
-
-
-            //Formula to calculate GPA:  GPA = (Total Grade Points) / (HOURS TAKEN)
-
-
-
-
-
-
-            //teacher.TeacherSubjects.Subjects.Where(s => s.SubjectID == updateDTO.TeacherSubjectID).FirstOrDefault();
-
+            var student = teacher.TeacherSubjects
+                .SelectMany(ts => ts.StudentSubjectGrades)
+                .Where(sg => sg.StudentID == updateDTO.StudentID)
+                .Select(sg => sg.Student)
+                .FirstOrDefault();
             var updatedStudentGrade = teacher.UpdateStudentsGrade(updateDTO.TeacherSubjectID, updateDTO.StudentID, updateDTO.GradeNumber);
 
             if (updatedStudentGrade == null)
@@ -224,6 +198,37 @@ namespace api.ApplicationLayer
             }
 
             await _teacherRepository.UpdateGrade();
+
+            //Calculate AND UPDATE GPA
+            var hourstaken = 0;
+            foreach (var ts in teacher.TeacherSubjects)
+            {
+                var subjecthours = ts.Subject.Hours;
+                hourstaken = hourstaken + subjecthours;
+
+            }
+
+            double totalgradepoints = 0;
+            foreach (var ts in teacher.TeacherSubjects)
+            {
+                var studentclassinfo = ts.StudentSubjectGrades.Where(s => s.StudentID == updateDTO.StudentID).FirstOrDefault();
+
+                 if (studentclassinfo != null)
+            {
+                totalgradepoints += GetGradePoint(studentclassinfo.GradeNumber);
+            }
+                
+            }
+
+            var updatedGPA = totalgradepoints / hourstaken;
+
+            student.UpdateGPA(updatedGPA.ToString());
+
+
+
+            //teacher.TeacherSubjects.Subjects.Where(s => s.SubjectID == updateDTO.TeacherSubjectID).FirstOrDefault();
+
+            
 
             return updatedStudentGrade;
 
@@ -242,5 +247,20 @@ namespace api.ApplicationLayer
 
             return studentDtos;
         }
+        private double GetGradePoint(int? gradeNumber)
+    {
+        if (gradeNumber >= 97) return 4.0; // A+
+        if (gradeNumber >= 93) return 4.0; // A
+        if (gradeNumber >= 90) return 3.7; // A-
+        if (gradeNumber >= 87) return 3.3; // B+
+        if (gradeNumber >= 83) return 3.0; // B
+        if (gradeNumber >= 80) return 2.7; // B-
+        if (gradeNumber >= 77) return 2.3; // C+
+        if (gradeNumber >= 73) return 2.0; // C
+        if (gradeNumber >= 70) return 1.7; // C-
+        if (gradeNumber >= 67) return 1.3; // D+
+        if (gradeNumber >= 63) return 1.0; // D
+        return 0.0; // F
+    }
     }
 }
