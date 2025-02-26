@@ -1,0 +1,194 @@
+@api_HostAddress = http://localhost:5152
+
+
+//                              STUDENTS                      
+//--------------------------------------------------------------------------------
+//                            Get All Students
+GET {{api_HostAddress}}/api/student/get?PageSize=2
+Accept: application/json
+//--------------------------------------------------------------------------------
+
+###
+//--------------------------------------------------------------------------------
+//                            Get Student by Id
+GET {{api_HostAddress}}/api/student/getstudent?StudentId=1000
+Accept: application/json
+//--------------------------------------------------------------------------------
+
+###
+//--------------------------------------------------------------------------------
+//                             Create a student
+POST {{api_HostAddress}}/api/student/create
+Content-Type: application/json
+Accept-Language: en-US,en:q=0.5
+
+    {
+  "name": "Test",
+  "age": 99,
+  "address": "99 Texas Avenue",
+  "gpa": 9,
+  "studentSubjectGrades": [
+  ]
+    }
+//--------------------------------------------------------------------------------
+
+###
+//--------------------------------------------------------------------------------
+//                          Get Subjects by StudentId
+GET {{api_HostAddress}}/api/student/subjects/get?StudentId=1000
+Accept: application/json
+//--------------------------------------------------------------------------------
+// subjectname, prof and grade, no ids
+
+
+
+###
+//--------------------------------------------------------------------------------
+//                        Enroll student in a subject 
+POST {{api_HostAddress}}/api/student/subjects/enroll?TeacherSubjectId=6&StudentId=1000
+Content-Type: application/json
+Accept-Language: en-US,en:q=0.5
+
+//--------------------------------------------------------------------------------
+
+
+###
+//--------------------------------------------------------------------------------
+//                                Drop class
+DELETE {{api_HostAddress}}/api/student/subjects/drop?TeacherSubjectId=6&StudentId=1000
+//--------------------------------------------------------------------------------
+
+
+###
+//--------------------------------------------------------------------------------
+//                            Get Grades from Student
+GET {{api_HostAddress}}/api/student/grades?StudentId=1000
+Accept: application/json
+//--------------------------------------------------------------------------------
+
+
+###
+//--------------------------------------------------------------------------------
+//--------------------------------------------------------------------------------
+//--------------------------------------------------------------------------------
+
+
+//                                  TEACHERS                                  
+//--------------------------------------------------------------------------------
+//                                Get All Teachers
+GET {{api_HostAddress}}/api/teacher/get
+Accept: application/json
+//--------------------------------------------------------------------------------
+
+
+###
+//--------------------------------------------------------------------------------
+//                            Get a Teacher by ID. 
+GET {{api_HostAddress}}/api/teacher/getteacher?TeacherId=2005
+Accept: application/json
+//--------------------------------------------------------------------------------
+
+
+###
+//--------------------------------------------------------------------------------
+//                          Create a new Teacher. 
+POST {{api_HostAddress}}/api/teacher/create
+Content-Type: application/json
+Accept-Language: en-US,en:q=0.5
+
+   {
+  "name": "Test",
+  "age": 99,
+  "address": "999 Test Avenue",
+  "yearsofExp": 18,
+  "teacherSubjects": [
+    {
+      "subjectID": 3
+    }
+
+  ]
+}
+//--------------------------------------------------------------------------------
+
+
+###
+//--------------------------------------------------------------------------------
+//                          Get All Subjects. 
+GET {{api_HostAddress}}/api/teacher/subjects
+Accept: application/json
+//--------------------------------------------------------------------------------
+
+
+###
+//--------------------------------------------------------------------------------
+///                     Get All Subject for a Teacher.
+GET {{api_HostAddress}}/api/teacher/subjects/get?TeacherId=2011
+//--------------------------------------------------------------------------------
+
+###
+//--------------------------------------------------------------------------------
+//          Get All Class Choices (Get All TeacherSubjects)
+GET {{api_HostAddress}}/api/teacher/teachersubjects?TeacherId=2011
+//--------------------------------------------------------------------------------
+      
+###
+//--------------------------------------------------------------------------------
+//                        Creates a Subject
+POST {{api_HostAddress}}/api/teacher/subjects/create
+Content-Type: application/json
+Accept-Language: en-US,en:q=0.5
+
+{
+  "name": "German",
+  "teacherid": 2011
+}
+//--------------------------------------------------------------------------------
+
+
+###
+//--------------------------------------------------------------------------------
+//                  Assigns a Subject to a Teacher
+POST {{api_HostAddress}}/api/teacher/teachersubjects/assign?TeacherId=2011&SubjectId=6
+Content-Type: application/json
+Accept-Language: en-US,en:q=0.5
+
+
+//--------------------------------------------------------------------------------
+
+
+###
+//--------------------------------------------------------------------------------
+//                    Removes a Subject from a Teacher.
+DELETE {{api_HostAddress}}/api/teacher/teachersubjects/delete?TeacherId=2011&TeacherSubjectId=15
+//--------------------------------------------------------------------------------
+
+
+###
+//--------------------------------------------------------------------------------
+//                          Delete a subject.
+DElETE {{api_HostAddress}}/api/teacher/subjects/delete?SubjectId=6
+//--------------------------------------------------------------------------------
+
+
+###
+//--------------------------------------------------------------------------------
+//            Get all Students in a Subject for a Teacher
+GET {{api_HostAddress}}/api/teacher/2002/subjects/6/students/get
+Accept: application/json
+//--------------------------------------------------------------------------------
+
+// list of students and subject 
+###
+//--------------------------------------------------------------------------------
+//                      Update a Student's grade. 
+PUT {{api_HostAddress}}/api/teacher/updategrade
+Content-Type: application/json
+Accept-Language: en-US,en:q=0.5
+
+{
+  "teacherid":2000,
+  "studentid":1001,
+  "teachersubjectid":5,
+  "gradenumber": 88
+}
+//--------------------------------------------------------------------------------
